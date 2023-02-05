@@ -4,12 +4,18 @@ public sealed class clsNewGame
 {
     public clsNewGame()
     {
-        firstplayerscore = 0;
-        secondplayerscore = 0;
-        
+        started = DateTime.Now;
+        whites = 16;
+        blacks = 16;
+        turn = true;
+        winner = 0;
+
     }
-    public int? firstplayerscore {get; set;}
-    public int? secondplayerscore {get; set;}
-    public int? id_firstplayer {get; set;}
-    public int? id_secondplayer {get; set;}
+    public int? id { get; set; }   
+    public DateTime? started { get; set; }
+    public int? whites {get; set;}
+    public int? blacks {get; set;}
+    public bool? turn {get; set;}
+    public int? winner { get; set; }
+
 }

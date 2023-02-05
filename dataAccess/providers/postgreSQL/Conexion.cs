@@ -39,7 +39,7 @@ namespace chessAPI.dataAccess.providers.postgreSQL
 
         }
 
-        public async Task<List<clsNewPlayer>>ExecuteQuery (string query)
+        public async Task<List<clsNewPlayer>>ReadPlayers (string query)
         {
             conect();
             await using var command = new NpgsqlCommand(query, conexion);
@@ -55,15 +55,15 @@ namespace chessAPI.dataAccess.providers.postgreSQL
             return querylist;
         }
 
-        public async Task<List<clsNewGame>>ReadGames (string query)
+        public async Task<List<clsGame>>ReadGames (string query)
         {
             conect();
             await using var command = new NpgsqlCommand(query, conexion);
             await using var reader = await command.ExecuteReaderAsync();
-            List<clsNewGame> querylist = new List<clsNewGame>();
+            List<clsGame> querylist = new List<clsGame>();
             while(await reader.ReadAsync())
             {
-                clsNewGame pl = ReadGame(reader);
+                clsGame pl = ReadGames(reader);
                 querylist.Add(pl);    
             }
             conexion.Close();
@@ -85,21 +85,24 @@ namespace chessAPI.dataAccess.providers.postgreSQL
 
         }
 
-        private static clsNewGame ReadGame(NpgsqlDataReader reader)
+        private static clsGame ReadGames(NpgsqlDataReader reader)
         {
-            //int? _id = reader["id"] as int?;
-            int? id1 = reader["id_firstplayer"] as int?;
-            int? id2 = reader["id_secondplayer"] as int?;
-            int? sc1 = reader["firstplayerscore"] as int?;
-            int? sc2 = reader["secondplayerscore"] as int?;
+            int? _id = reader["id"] as int?;
+            DateTime? _started = reader["started"] as DateTime?;
+            int? _whites = reader["whites"] as int?;
+            int? _blacks = reader["blacks"] as int?;
+            bool? _turn = reader["turn"] as bool?;
+            int? _winner = reader["winner"] as int?;
 
-            clsNewGame game= new clsNewGame
+            clsGame game = new clsGame
             {
-                
-                firstplayerscore = sc1,
-                secondplayerscore = sc2,
-                id_firstplayer = id1,
-                id_secondplayer=id2
+
+                id = _id,
+                started = _started,
+                whites = _whites,
+                blacks = _blacks,
+                turn = _turn,
+                winner = _winner
             };
 
             return game;
