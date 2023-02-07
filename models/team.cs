@@ -1,4 +1,6 @@
-﻿namespace chessAPI.models
+﻿using Npgsql;
+
+namespace chessAPI.models
 {
     public class team
     {
@@ -6,5 +8,13 @@
         public string name { get; set; }
         public DateTime created_at { get; set; }
 
+        public void CreateTeam()
+        {
+            
+
+        }
+
     }
+
+    
 }

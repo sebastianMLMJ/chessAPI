@@ -9,6 +9,10 @@ using Serilog.Events;
 using chessAPI.dataAccess.providers.postgreSQL;
 using Microsoft.EntityFrameworkCore;
 using chessAPI.models;
+using Npgsql;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using Microsoft.AspNetCore.Mvc;
+using Dapper;
 
 //Serilog logger (https://github.com/serilog/serilog-aspnetcore)
 Log.Logger = new LoggerConfiguration()
@@ -98,33 +102,80 @@ try
     });
 
 
-    app.MapPost("/game", (clsNewGame newGame) =>
-    {
-        var query = "INSERT INTO public.game(started, whites, blacks, turn, winner)VALUES (NOW(), @whites, @blacks, @turn, @winner);";
-        query = query.Replace("@whites", Convert.ToString(newGame.whites));
-        query = query.Replace("@blacks", Convert.ToString(newGame.blacks));
-        query = query.Replace("@turn", Convert.ToString(newGame.turn));
-        query = query.Replace("@winner", Convert.ToString(newGame.winner));
+    //app.MapPost("/CrearUnEquipo", ([FromBody] string _name) =>
+    //{
+    //    using (var db = new NpgsqlConnection(connectionStrings.relationalDBConn))
+    //    {
+    //        var queryinsert = "INSERT INTO public.team(name, created_at) VALUES (@name, NOW());";
+    //        var result = db.Execute(queryinsert, new { name = _name });
+    //    }
+    //    return Results.Ok("");
+    //});
 
-        Conexion jugador = new Conexion();
-        jugador.ExecuteNonQuery(query);
+
+
+    app.MapPost("/CrearPartida", ( gameteams teams) =>
+    {
+
+        using (var db = new NpgsqlConnection(connectionStrings.relationalDBConn))
+        {
+            var queryquantity = "select count(*) as quantity from team where id = @id1 OR id = @id2";
+            var quantity = db.Query<int>(queryquantity, new {id1 = teams.id_t1,id2= teams.id_t2});
+
+            if (quantity.First() == 2)
+            {
+                var queryinsert = "INSERT INTO public.game(started, whites, blacks, turn)VALUES (NOW(), @whites, @blacks, true);";
+                var result = db.Execute(queryinsert, new {whites=teams.id_t1,blacks=teams.id_t2});
+                return Results.Ok("El juego comienza");
+            }
+            else
+            {
+                return Results.NotFound("no todos los equipos existen");
+            }
+
+        }
+        
+       
     });
 
 
-
-    app.MapPut("/unirsepartida", (team_player game) =>
+    app.MapPut("/unirsepartida", (team_player team) =>
     {
-        var query = "INSERT INTO public.team_player(team_id, player_id) VALUES (@teamid ,@playerid );";
-        query = query.Replace("@teamid", Convert.ToString(game.team_id));
-        query = query.Replace("@playerid", Convert.ToString(game.player_id));
-        Conexion jugador = new Conexion();
-        jugador.ExecuteNonQuery(query);
+
+        using (var db = new NpgsqlConnection(connectionStrings.relationalDBConn))
+        {
+            var teamqueryquantity = "select count(*) as quantity from team where id = @id1";
+            var teamquantity = db.Query<int>(teamqueryquantity, new { id1 = team.team_id});
+
+            var playerqueryquantity = "select count(*) as quantity from team_player where player_id = @id1";
+            var playerquantity = db.Query<int>(playerqueryquantity, new { id1 = team.player_id });
+
+            if (teamquantity.First() == 1 && playerquantity.First() == 0)
+            {
+                var queryinsert = "INSERT INTO public.team_player(team_id, player_id) VALUES (@team_id, @player_id);";
+                var result = db.Execute(queryinsert, new { team_id = team.team_id , player_id = team.player_id });
+                return Results.Ok("Jugador agregado al equipo");
+            }
+            else if(teamquantity.First() != 1)
+            {
+                return Results.NotFound("No se encontro el equipo");
+            }
+            else if(playerquantity.First() != 0)
+            {
+                return Results.BadRequest("El jugador ya esta agregado a un equipo");
+            }
+
+            return Results.Ok();
+
+        }
+       
     });
 
 
     //app.MapPost("player", 
     //[AllowAnonymous] async(IPlayerBusiness<int> bs, clsNewPlayer newPlayer) => Results.Ok(await bs.addPlayer(newPlayer)));
 
+    
     app.Run();
 }
 catch (Exception ex)
